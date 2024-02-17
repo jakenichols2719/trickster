@@ -160,6 +160,7 @@ func QueryCache(ctx context.Context, c cache.Cache, key string,
 			wg := &sync.WaitGroup{}
 			// Result slice of timeseries
 			ress := make([]timeseries.Timeseries, cct)
+			errs := make([]error, cct)
 			resi := 0
 			for chunkStart := cext.Start; chunkStart.Before(cext.End); chunkStart = chunkStart.Add(csize) {
 				// Chunk range (inclusive, on-step)
@@ -179,12 +180,18 @@ func QueryCache(ctx context.Context, c cache.Cache, key string,
 					}
 					if qr.err == nil {
 						ress[outIdx] = qr.d.timeseries
+					} else {
+						errs[outIdx] = qr.err
 					}
 				}(resi)
 				resi++
 			}
 			// Wait on queries
 			wg.Wait()
+			// Handle any errors
+			if err := errors.Join(errs...); err != nil {
+				return qr.d, qr.lookupStatus, ranges, err
+			}
 			d.timeseries = ress[0]
 			d.timeseries.Merge(true, ress[1:]...)
 			if d.timeseries != nil {
