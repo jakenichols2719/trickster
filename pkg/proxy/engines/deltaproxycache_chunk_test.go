@@ -316,11 +316,12 @@ func TestDeltaProxyCacheRequestMarshalFailureChunks(t *testing.T) {
 func TestDeltaProxyCacheRequestPartialHitChunks(t *testing.T) {
 
 	ts, w, r, rsc, err := setupTestHarnessDPC()
-	rsc.CacheConfig.UseCacheChunking = true
 	if err != nil {
 		t.Error(err)
 	}
 	defer ts.Close()
+
+	rsc.CacheConfig.UseCacheChunking = true
 
 	client := rsc.BackendClient.(*TestClient)
 	o := rsc.BackendOptions
